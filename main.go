@@ -70,11 +70,11 @@ func main() {
 }
 
 func triggerOutlets(outlets map[string]*hs100.Hs100, temp uint16) error {
-	adjustedTempLow := temp - tempVarianceDegrees
-	adjustedTempHigh := temp + tempVarianceDegrees
+	tempLow := desiredTemp - tempVarianceDegrees
+	tempHigh := desiredTemp + tempVarianceDegrees
 
-	if adjustedTempLow < desiredTemp {
-		fmt.Println("temp is too low, turning on heat")
+	if temp < tempLow {
+		fmt.Printf("current temp %d is lower than %d, turning on heat\n", temp, tempLow)
 		err := outlets[heaterOutlet].TurnOn()
 		if err != nil {
 			return fmt.Errorf("turning heater on")
@@ -86,8 +86,8 @@ func triggerOutlets(outlets map[string]*hs100.Hs100, temp uint16) error {
 		return nil
 	}
 
-	if adjustedTempHigh > desiredTemp {
-		fmt.Println("temp is too high, turning on cooling")
+	if temp > tempHigh {
+		fmt.Printf("current temp %d is higher than %d, turning on cooling\n", temp, tempHigh)
 		err := outlets[fridgeOutlet].TurnOn()
 		if err != nil {
 			return fmt.Errorf("turning fridge on")
@@ -99,7 +99,15 @@ func triggerOutlets(outlets map[string]*hs100.Hs100, temp uint16) error {
 		return nil
 	}
 
-	fmt.Println("temp is in ok range")
+	fmt.Println("temp is in ok range, ensuring fridge and heater are off")
+	err := outlets[fridgeOutlet].TurnOff()
+	if err != nil {
+		return fmt.Errorf("turning fridge off")
+	}
+	err = outlets[heaterOutlet].TurnOff()
+	if err != nil {
+		return fmt.Errorf("turning heater off")
+	}
 
 	return nil
 }
