@@ -23,6 +23,8 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Printf("configuration - desired temp: %d, temp variance: %d\n", conf.DesiredTemp, conf.TempVarianceDegrees)
+
 	datadogClient = datadog.NewDatadogClient(conf.DatadogApiKey, conf.DatadogAppKey)
 	err = datadogClient.PublishMetric(context.Background(), "pi_brew.start")
 	if err != nil {
@@ -39,7 +41,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("configuration - desired temp: %d, temp variance: %d\n", conf.DesiredTemp, conf.TempVarianceDegrees)
+	run(conf)
 
 	ticker := time.NewTicker(tickerDuration)
 	for range ticker.C {
