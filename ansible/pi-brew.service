@@ -1,0 +1,17 @@
+[Unit]
+Description=pi-brew
+After=systemd-journald.service network.target
+Requires=systemd-journald.service
+StartLimitInterval=0
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+ExecStart=/home/pi/pi-brew
+WorkingDirectory=/home/pi
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+RestartSec=5
+User=root

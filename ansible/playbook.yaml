@@ -1,0 +1,41 @@
+- name: Deploy
+  hosts: all
+  remote_user: pi
+  become: true
+  vars:
+    DD_API_KEY: "{{ lookup('ansible.builtin.env', 'DD_API_KEY') }}"
+    DD_APP_KEY: "{{ lookup('ansible.builtin.env', 'DD_APP_KEY') }}"
+  tasks:
+  - name: Copy systemd unit file
+    ansible.builtin.template:
+      src: ./pi-brew.service
+      dest: /etc/systemd/system/pi-brew.service
+      owner: root
+      group: root
+  - name: Copy datadog api key
+    ansible.builtin.template:
+      src: ./.dd-api-key.tmpl
+      dest: /home/pi/.dd-api-key
+      owner: root
+      group: root
+  - name: Copy datadog app key
+    ansible.builtin.template:
+      src: ./.dd-app-key.tmpl
+      dest: /home/pi/.dd-app-key
+      owner: root
+      group: root
+  - name: Copy agent binary
+    ansible.builtin.copy:
+      src: ../bin/pi-brew
+      dest: /home/pi/pi-brew
+      mode: '0755'
+      owner: pi
+      group: pi
+      force: yes
+  - name: Restart pi-brew systemd unit
+    systemd:
+      daemon_reload: yes
+      enabled: yes
+      force: yes
+      name: pi-brew
+      state: restarted

@@ -1,34 +1,32 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"strconv"
+	"time"
 
+	"github.com/andrewmarklloyd/pi-brew/internal/pkg/config"
+	"github.com/andrewmarklloyd/pi-brew/internal/pkg/datadog"
 	"github.com/andrewmarklloyd/pi-brew/internal/pkg/outlet"
 	"github.com/andrewmarklloyd/pi-brew/internal/pkg/tilt"
 )
 
-const (
-	desiredTempDefault         = 68
-	tempVarianceDegreesDefault = 2
-)
-
-var (
-	desiredTemp         uint16
-	tempVarianceDegrees uint16
-)
-
 func main() {
-	desiredTemp, tempVarianceDegrees, err := getConfig()
+	conf, err := config.GetConfig()
 	if err != nil {
-		panic(fmt.Sprintf("getting config: %s", err.Error()))
+		panic(err)
 	}
 
-	fmt.Printf("configuration - desired temp: %d, temp variance: %d\n", desiredTemp, tempVarianceDegrees)
+	datadogClient := datadog.NewDatadogClient(conf.DatadogApiKey, conf.DatadogAppKey)
+	err = datadogClient.PublishMetric(context.Background(), "pi-brew.start")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("configuration - desired temp: %d, temp variance: %d\n", conf.DesiredTemp, conf.TempVarianceDegrees)
 
 	fmt.Println("setting up outlets")
-	outletClient, err := outlet.SetupOutlets(desiredTemp, tempVarianceDegrees)
+	outletClient, err := outlet.SetupOutlets(conf.DesiredTemp, conf.TempVarianceDegrees)
 	if err != nil {
 		panic(err)
 	}
@@ -44,32 +42,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-}
 
-func getConfig() (uint16, uint16, error) {
-	desiredTempString, ok := os.LookupEnv("DESIRED_TEMP")
-	if ok {
-		ui64, err := strconv.ParseUint(desiredTempString, 10, 64)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		desiredTemp = uint16(ui64)
-	} else {
-		desiredTemp = desiredTempDefault
-	}
-
-	desiredTempVarianceString, ok := os.LookupEnv("TEMP_VARIANCE")
-	if ok {
-		ui64, err := strconv.ParseUint(desiredTempVarianceString, 10, 64)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		tempVarianceDegrees = uint16(ui64)
-	} else {
-		tempVarianceDegrees = tempVarianceDegreesDefault
-	}
-
-	return desiredTemp, tempVarianceDegrees, nil
+	time.Sleep(time.Hour)
 }
