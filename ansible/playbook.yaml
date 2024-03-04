@@ -24,7 +24,7 @@
       dest: /home/pi/.dd-app-key
       owner: root
       group: root
-  - name: Copy agent binary
+  - name: Copy pi-brew binary
     ansible.builtin.copy:
       src: ../bin/pi-brew
       dest: /home/pi/pi-brew

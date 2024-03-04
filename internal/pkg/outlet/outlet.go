@@ -13,22 +13,22 @@ const (
 	fridgeOutlet = "fermentor-fridge"
 )
 
-type OutletClient struct {
+type Client struct {
 	desiredTemp, tempVarianceDegrees uint16
 	outlets                          map[string]*hs100.Hs100
 }
 
-func SetupOutlets(desiredTemp, tempVarianceDegrees uint16) (OutletClient, error) {
+func SetupOutlets(desiredTemp, tempVarianceDegrees uint16) (Client, error) {
 	allDevices, err := hs100.Discover("192.168.1.1/24", configuration.Default().WithTimeout(5*time.Second))
 	if err != nil {
-		return OutletClient{}, fmt.Errorf("error getting devices: %w", err)
+		return Client{}, fmt.Errorf("error getting devices: %w", err)
 	}
 
 	outlets := make(map[string]*hs100.Hs100, 2)
 	for _, d := range allDevices {
 		name, err := d.GetName()
 		if err != nil {
-			return OutletClient{}, fmt.Errorf("error getting device name: %w", err)
+			return Client{}, fmt.Errorf("error getting device name: %w", err)
 		}
 		if name == heaterOutlet {
 			outlets[heaterOutlet] = d
@@ -39,17 +39,17 @@ func SetupOutlets(desiredTemp, tempVarianceDegrees uint16) (OutletClient, error)
 	}
 
 	if len(outlets) != 2 {
-		return OutletClient{}, fmt.Errorf("expected to find 2 outlets but found %d", len(outlets))
+		return Client{}, fmt.Errorf("expected to find 2 outlets but found %d", len(outlets))
 	}
 
-	return OutletClient{
+	return Client{
 		desiredTemp:         desiredTemp,
 		tempVarianceDegrees: tempVarianceDegrees,
 		outlets:             outlets,
 	}, nil
 }
 
-func (o *OutletClient) TriggerOutlets(temp uint16) error {
+func (o *Client) TriggerOutlets(temp uint16) error {
 	tempLow := o.desiredTemp - o.tempVarianceDegrees
 	tempHigh := o.desiredTemp + o.tempVarianceDegrees
 
