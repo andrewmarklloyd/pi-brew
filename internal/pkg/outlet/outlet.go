@@ -1,9 +1,11 @@
 package outlet
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/andrewmarklloyd/pi-brew/internal/pkg/datadog"
 	"github.com/jaedle/golang-tplink-hs100/pkg/configuration"
 	"github.com/jaedle/golang-tplink-hs100/pkg/hs100"
 )
@@ -16,9 +18,10 @@ const (
 type Client struct {
 	desiredTemp, tempVarianceDegrees uint16
 	outlets                          map[string]*hs100.Hs100
+	datadogClient                    datadog.Client
 }
 
-func SetupOutlets(desiredTemp, tempVarianceDegrees uint16) (Client, error) {
+func SetupOutlets(desiredTemp, tempVarianceDegrees uint16, datadogClient datadog.Client) (Client, error) {
 	allDevices, err := hs100.Discover("192.168.1.1/24", configuration.Default().WithTimeout(5*time.Second))
 	if err != nil {
 		return Client{}, fmt.Errorf("error getting devices: %w", err)
@@ -46,6 +49,7 @@ func SetupOutlets(desiredTemp, tempVarianceDegrees uint16) (Client, error) {
 		desiredTemp:         desiredTemp,
 		tempVarianceDegrees: tempVarianceDegrees,
 		outlets:             outlets,
+		datadogClient:       datadogClient,
 	}, nil
 }
 
@@ -63,6 +67,9 @@ func (o *Client) TriggerOutlets(temp uint16) error {
 		if err != nil {
 			return fmt.Errorf("turning fridge off")
 		}
+		if err := o.publishMetrics("on", "off"); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -76,6 +83,9 @@ func (o *Client) TriggerOutlets(temp uint16) error {
 		if err != nil {
 			return fmt.Errorf("turning heater off")
 		}
+		if err := o.publishMetrics("off", "on"); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -87,6 +97,30 @@ func (o *Client) TriggerOutlets(temp uint16) error {
 	err = o.outlets[heaterOutlet].TurnOff()
 	if err != nil {
 		return fmt.Errorf("turning heater off")
+	}
+	if err := o.publishMetrics("off", "off"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *Client) publishMetrics(heaterMode, fridgeMode string) error {
+	metricName := "outlet_trigger"
+	err := o.datadogClient.PublishMetric(context.Background(), metricName, map[string]string{
+		"outlet": heaterOutlet,
+		"mode":   heaterMode,
+	})
+	if err != nil {
+		return fmt.Errorf("publishing metric %s with values (outlet: %s, mode: %s) %w", metricName, heaterOutlet, heaterMode, err)
+	}
+
+	err = o.datadogClient.PublishMetric(context.Background(), metricName, map[string]string{
+		"outlet": fridgeOutlet,
+		"mode":   fridgeMode,
+	})
+	if err != nil {
+		return fmt.Errorf("publishing metric %s with values (outlet: %s, mode: %s) %w", metricName, fridgeOutlet, fridgeMode, err)
 	}
 
 	return nil

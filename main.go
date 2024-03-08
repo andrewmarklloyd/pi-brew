@@ -26,7 +26,7 @@ func main() {
 	fmt.Printf("configuration - desired temp: %d, temp variance: %d\n", conf.DesiredTemp, conf.TempVarianceDegrees)
 
 	datadogClient = datadog.NewDatadogClient(conf.DatadogApiKey, conf.DatadogAppKey)
-	err = datadogClient.PublishMetric(context.Background(), "pi_brew.start")
+	err = datadogClient.PublishMetric(context.Background(), "pi_brew.start", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -36,7 +36,7 @@ func main() {
 		panic(err)
 	}
 
-	outletClient, err = outlet.SetupOutlets(conf.DesiredTemp, conf.TempVarianceDegrees)
+	outletClient, err = outlet.SetupOutlets(conf.DesiredTemp, conf.TempVarianceDegrees, datadogClient)
 	if err != nil {
 		panic(err)
 	}
@@ -51,13 +51,25 @@ func main() {
 }
 
 func run(conf config.Config) {
-	err := datadogClient.PublishMetric(context.Background(), "pi_brew.run_start")
+	err := datadogClient.PublishMetric(context.Background(), "pi_brew.run_start", nil)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("getting primary tilt temp")
-	temp, err := tiltClient.GetPrimaryTiltTemp()
+	temp := tiltClient.GetPrimaryTiltTemp()
+	gravity := tiltClient.GetPrimaryTiltGravity()
+	fmt.Println("gravity: ", gravity)
+
+	err = datadogClient.PublishMetricWithValue(context.Background(), "pi_brew.temp", float64(temp), map[string]string{
+		"color": tilt.PrimaryTiltColor,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	err = datadogClient.PublishMetricWithValue(context.Background(), "pi_brew.gravity", float64(gravity), map[string]string{
+		"color": tilt.PrimaryTiltColor,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +79,7 @@ func run(conf config.Config) {
 		panic(err)
 	}
 
-	err = datadogClient.PublishMetric(context.Background(), "pi_brew.run_end")
+	err = datadogClient.PublishMetric(context.Background(), "pi_brew.run_end", nil)
 	if err != nil {
 		panic(err)
 	}

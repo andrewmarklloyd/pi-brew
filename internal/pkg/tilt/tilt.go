@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	primaryTiltColor = "Green"
+	PrimaryTiltColor = "Green"
 	scanTimeout      = 10 * time.Second
 )
 
@@ -26,7 +26,7 @@ func NewTiltClient() (Client, error) {
 	}
 
 	for _, t := range s.Tilts() {
-		if t.Colour() == tilt.Colour(primaryTiltColor) {
+		if t.Colour() == tilt.Colour(PrimaryTiltColor) {
 			return Client{
 				scanner: *s,
 				tilt:    t,
@@ -34,9 +34,13 @@ func NewTiltClient() (Client, error) {
 		}
 	}
 
-	return Client{}, fmt.Errorf("no tilts matched primary color %s", primaryTiltColor)
+	return Client{}, fmt.Errorf("no tilts matched primary color %s", PrimaryTiltColor)
 }
 
-func (t *Client) GetPrimaryTiltTemp() (uint16, error) {
-	return t.tilt.Fahrenheit(), nil
+func (t *Client) GetPrimaryTiltTemp() uint16 {
+	return t.tilt.Fahrenheit()
+}
+
+func (t *Client) GetPrimaryTiltGravity() float64 {
+	return t.tilt.Gravity()
 }
