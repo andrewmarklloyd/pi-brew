@@ -6,6 +6,7 @@ require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.23.0
 	github.com/alexhowarth/go-tilt v1.0.2
 	github.com/jaedle/golang-tplink-hs100 v0.6.1
+	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -22,7 +23,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/raff/goble v0.0.0-20190909174656-72afc67d6a99 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/stretchr/testify v1.7.5 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect

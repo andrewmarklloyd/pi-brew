@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+GOOS=linux GOARCH=arm GOARM=5 go build -o bin/log-forwarder log-forwarder/main.go
 GOOS=linux GOARCH=arm GOARM=5 go build  -o bin/pi-brew main.go
 export DD_APP_KEY=$(op read ${OP_DD_API_KEY_PATH})
 export DD_API_KEY=$(op read ${OP_DD_APP_KEY_PATH})

@@ -39,3 +39,28 @@
       force: yes
       name: pi-brew
       state: restarted
+  - name: Copy log-forwader binary
+    ansible.builtin.copy:
+      src: ../bin/log-forwarder
+      dest: /home/pi/log-forwarder
+      mode: '0755'
+      owner: root
+      group: root
+      force: yes
+    register: forwarder_binary
+  - name: Copy forwarder systemd unit file
+    ansible.builtin.template:
+      src: ../log-forwarder/systemd-unit.service.j2
+      dest: /etc/systemd/system/log-forwarder.service
+      owner: root
+      group: root
+    register: forwarder_systemd
+  - name: Restart forwarder systemd unit
+    become: true
+    systemd:
+      daemon_reload: yes
+      enabled: yes
+      force: yes
+      name: log-forwarder
+      state: restarted
+    when: forwarder_binary.changed | bool or forwarder_systemd.changed | bool

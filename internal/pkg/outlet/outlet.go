@@ -8,6 +8,7 @@ import (
 	"github.com/andrewmarklloyd/pi-brew/internal/pkg/datadog"
 	"github.com/jaedle/golang-tplink-hs100/pkg/configuration"
 	"github.com/jaedle/golang-tplink-hs100/pkg/hs100"
+	"go.uber.org/zap"
 )
 
 const (
@@ -53,19 +54,19 @@ func SetupOutlets(desiredTemp, tempVarianceDegrees uint16, datadogClient datadog
 	}, nil
 }
 
-func (o *Client) TriggerOutlets(temp uint16) error {
+func (o *Client) TriggerOutlets(temp uint16, logger *zap.SugaredLogger) error {
 	tempLow := o.desiredTemp - o.tempVarianceDegrees
 	tempHigh := o.desiredTemp + o.tempVarianceDegrees
 
 	if temp < tempLow {
-		fmt.Printf("current temp %d is lower than %d, turning on heat\n", temp, tempLow)
+		logger.Infof("current temp %d is lower than %d, turning on heat\n", temp, tempLow)
 		err := o.outlets[heaterOutlet].TurnOn()
 		if err != nil {
-			return fmt.Errorf("turning heater on")
+			return fmt.Errorf("turning heater on: %w", err)
 		}
 		err = o.outlets[fridgeOutlet].TurnOff()
 		if err != nil {
-			return fmt.Errorf("turning fridge off")
+			return fmt.Errorf("turning fridge off: %w", err)
 		}
 		if err := o.publishMetrics("on", "off"); err != nil {
 			return err
@@ -74,14 +75,14 @@ func (o *Client) TriggerOutlets(temp uint16) error {
 	}
 
 	if temp > tempHigh {
-		fmt.Printf("current temp %d is higher than %d, turning on cooling\n", temp, tempHigh)
+		logger.Infof("current temp %d is higher than %d, turning on cooling\n", temp, tempHigh)
 		err := o.outlets[fridgeOutlet].TurnOn()
 		if err != nil {
 			return fmt.Errorf("turning fridge on")
 		}
 		err = o.outlets[heaterOutlet].TurnOff()
 		if err != nil {
-			return fmt.Errorf("turning heater off")
+			return fmt.Errorf("turning heater off: %w", err)
 		}
 		if err := o.publishMetrics("off", "on"); err != nil {
 			return err
@@ -89,14 +90,14 @@ func (o *Client) TriggerOutlets(temp uint16) error {
 		return nil
 	}
 
-	fmt.Println("temp is in ok range, ensuring fridge and heater are off")
+	logger.Infof("temp is in ok range, ensuring fridge and heater are off")
 	err := o.outlets[fridgeOutlet].TurnOff()
 	if err != nil {
-		return fmt.Errorf("turning fridge off")
+		return fmt.Errorf("turning fridge off: %w", err)
 	}
 	err = o.outlets[heaterOutlet].TurnOff()
 	if err != nil {
-		return fmt.Errorf("turning heater off")
+		return fmt.Errorf("turning heater off: %w", err)
 	}
 	if err := o.publishMetrics("off", "off"); err != nil {
 		return err
