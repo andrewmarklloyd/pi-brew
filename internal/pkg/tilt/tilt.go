@@ -12,35 +12,31 @@ const (
 	scanTimeout      = 10 * time.Second
 )
 
-type Client struct {
-	scanner tilt.Scanner
-	tilt    tilt.Tilt
-}
-
-func NewTiltClient() (Client, error) {
+func GetStats() (uint16, float64, error) {
 	s := tilt.NewScanner()
 	s.Scan(scanTimeout)
 
 	if len(s.Tilts()) == 0 {
-		return Client{}, fmt.Errorf("did not find any tilts")
+		return 0, 0, fmt.Errorf("did not find any tilts")
 	}
+
+	var temp uint16
+	var gravity float64
 
 	for _, t := range s.Tilts() {
 		if t.Colour() == tilt.Colour(PrimaryTiltColor) {
-			return Client{
-				scanner: *s,
-				tilt:    t,
-			}, nil
+			temp = t.Fahrenheit()
+			gravity = t.Gravity()
 		}
 	}
 
-	return Client{}, fmt.Errorf("no tilts matched primary color %s", PrimaryTiltColor)
-}
+	if temp == 0 {
+		return 0, 0, fmt.Errorf("temp value not set")
+	}
 
-func (t *Client) GetPrimaryTiltTemp() uint16 {
-	return t.tilt.Fahrenheit()
-}
+	if gravity == 0 {
+		return 0, 0, fmt.Errorf("gravity value not set")
+	}
 
-func (t *Client) GetPrimaryTiltGravity() float64 {
-	return t.tilt.Gravity()
+	return temp, gravity, nil
 }

@@ -15,7 +15,6 @@ const tickerDuration = 10 * time.Minute
 
 var (
 	datadogClient datadog.Client
-	tiltClient    tilt.Client
 	outletClient  outlet.Client
 	logger        *zap.SugaredLogger
 )
@@ -42,11 +41,6 @@ func main() {
 		logger.Fatalf("publishing start metric: %s", err.Error())
 	}
 
-	tiltClient, err = tilt.NewTiltClient()
-	if err != nil {
-		logger.Fatalf("creating tilt client: %s", err.Error())
-	}
-
 	outletClient, err = outlet.SetupOutlets(conf.DesiredTemp, conf.TempVarianceDegrees, datadogClient)
 	if err != nil {
 		logger.Fatalf("setting up outlets: %s", err.Error())
@@ -67,8 +61,11 @@ func run(conf config.Config) {
 		logger.Fatalf("publishing run start metric: %s", err.Error())
 	}
 
-	temp := tiltClient.GetPrimaryTiltTemp()
-	gravity := tiltClient.GetPrimaryTiltGravity()
+	temp, gravity, err := tilt.GetStats()
+	if err != nil {
+		logger.Fatalf("creating tilt client: %s", err.Error())
+	}
+
 	logger.Infof("gravity measure: %f", gravity)
 
 	err = datadogClient.PublishMetricWithValue(context.Background(), "pi_brew.temp", float64(temp), map[string]string{
