@@ -23,6 +23,7 @@ type syslog struct {
 }
 
 var datadogClient dd.Client
+var ddAPI *datadogV2.LogsApi
 
 func main() {
 	conf, err := config.GetConfig()
@@ -31,6 +32,12 @@ func main() {
 	}
 
 	datadogClient = dd.NewDatadogClient(conf.DatadogApiKey, conf.DatadogAppKey)
+
+	os.Setenv("DD_API_KEY", conf.DatadogApiKey)
+	os.Setenv("DD_APP_KEY", conf.DatadogAppKey)
+	configuration := datadog.NewConfiguration()
+	apiClient := datadog.NewAPIClient(configuration)
+	ddAPI = datadogV2.NewLogsApi(apiClient)
 
 	go sendLogHearbeat()
 
@@ -114,11 +121,10 @@ func sendLog(log string) error {
 			Service:  datadog.PtrString("pi-brew"),
 		},
 	}
+
 	ctx := datadog.NewDefaultContext(context.Background())
-	configuration := datadog.NewConfiguration()
-	apiClient := datadog.NewAPIClient(configuration)
-	api := datadogV2.NewLogsApi(apiClient)
-	_, r, err := api.SubmitLog(ctx, body, *datadogV2.NewSubmitLogOptionalParameters().WithContentEncoding(datadogV2.CONTENTENCODING_DEFLATE))
+
+	_, r, err := ddAPI.SubmitLog(ctx, body, *datadogV2.NewSubmitLogOptionalParameters().WithContentEncoding(datadogV2.CONTENTENCODING_DEFLATE))
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `LogsApi.SubmitLog`: %v\n", err)

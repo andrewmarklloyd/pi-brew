@@ -41,10 +41,10 @@ func main() {
 		logger.Fatalf("publishing start metric: %s", err.Error())
 	}
 
-	outletClient, err = outlet.SetupOutlets(conf.DesiredTemp, conf.TempVarianceDegrees, datadogClient)
-	if err != nil {
-		logger.Fatalf("setting up outlets: %s", err.Error())
-	}
+	// outletClient, err = outlet.SetupOutlets(conf.DesiredTemp, conf.TempVarianceDegrees, datadogClient)
+	// if err != nil {
+	// 	logger.Fatalf("setting up outlets: %s", err.Error())
+	// }
 
 	run(conf)
 
@@ -82,10 +82,10 @@ func run(conf config.Config) {
 		logger.Fatalf("publishing gravity metric: %s", err.Error())
 	}
 
-	err = outletClient.TriggerOutlets(temp, logger)
-	if err != nil {
-		logger.Fatalf("triggering outlets: %s", err.Error())
-	}
+	// err = outletClient.TriggerOutlets(temp, logger)
+	// if err != nil {
+	// 	logger.Fatalf("triggering outlets: %s", err.Error())
+	// }
 
 	err = datadogClient.PublishMetric(context.Background(), "pi_brew.run_end", nil)
 	if err != nil {

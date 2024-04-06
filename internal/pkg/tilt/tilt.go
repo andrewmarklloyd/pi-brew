@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	PrimaryTiltColor = "Green"
+	PrimaryTiltColor = "Blue"
 	scanTimeout      = 10 * time.Second
 )
 
